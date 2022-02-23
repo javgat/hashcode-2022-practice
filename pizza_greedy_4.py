@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # Author: Javier Gatón Herguedas.
 # Pizza Hash Code Answer using a greedy approach.
-# It saves the clients that collide with less clients.
+# It saves the clients that collide with less ingredients.
 
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
 
 @dataclass
 class Client():
-    def __init__(self, id: str, client_likes: List[str], client_dislikes: List[str], num_collisions: int, collided_clients: List[int]):
+    def __init__(self, id: str, client_likes: List[str], client_dislikes: List[str], num_collisions: int):
         self.id = id
         self.client_likes = client_likes
         self.client_dislikes = client_dislikes
         self.num_collisions = num_collisions
-        self.collided_clients = collided_clients
-        self.happy = False
 
 @dataclass
 class Solution():
@@ -38,7 +36,6 @@ def input_data() -> Tuple[Dict[str, List[int]], Dict[str, List[int]], List[Clien
         client_dislikes = []
 
         num_collisions = 0
-        collided_clients = []
 
         # Check that its not a troll client
         troll = False
@@ -64,11 +61,8 @@ def input_data() -> Tuple[Dict[str, List[int]], Dict[str, List[int]], List[Clien
             if food in dislikes:
                 ds = dislikes[food]
                 for j in ds:
-                    if j not in collided_clients:
-                        collided_clients.append(j)
-                        num_collisions += 1
-                        clients[j].collided_clients.append(id)
-                        clients[j].num_collisions += 1
+                    num_collisions += 1
+                    clients[j].num_collisions += 1
         for i in range(n_dislikes):
             food = dislike_line[i+1]
             client_dislikes.append(food)
@@ -79,12 +73,9 @@ def input_data() -> Tuple[Dict[str, List[int]], Dict[str, List[int]], List[Clien
             if food in likes:
                 ls = likes[food]
                 for j in ls:
-                    if j not in collided_clients:
-                        collided_clients.append(j)
-                        num_collisions += 1
-                        clients[j].collided_clients.append(id)
-                        clients[j].num_collisions += 1
-        clients.append(Client(id, client_likes, client_dislikes, num_collisions, collided_clients))
+                    num_collisions += 1
+                    clients[j].num_collisions += 1
+        clients.append(Client(id, client_likes, client_dislikes, num_collisions))
     return likes, dislikes, clients
 
 def get_non_collision_ingredients(likes: Dict[str, List], dislikes: Dict[str, List]) -> List[str]:
@@ -95,11 +86,7 @@ def get_non_collision_ingredients(likes: Dict[str, List], dislikes: Dict[str, Li
     return foods
 
 def get_factor_others_collisions(clients: List[Client], index: int) -> int:
-    n_colls = []
-    for i in clients[index].collided_clients:
-        n_colls.append(-clients[i].num_collisions)
-    n_colls.sort()
-    return n_colls
+    return 0
 
 def delete_client(id: int, likes: Dict[str, List[int]], dislikes: Dict[str, List[int]], clients: List[Client],
                   order_clients: List[Tuple[int, int, int]]):
@@ -110,54 +97,43 @@ def delete_client(id: int, likes: Dict[str, List[int]], dislikes: Dict[str, List
         likes[food].remove(deleting_id)
         if food in dislikes:
             for j in dislikes[food]:
-                if deleting_id in clients[j].collided_clients:
-                    clients[j].num_collisions -= 1
-                    clients[j].collided_clients.remove(deleting_id)
+                clients[j].num_collisions -= 1
     dis_foods = clients[deleting_id].client_dislikes
     for food in dis_foods:
         dislikes[food].remove(deleting_id)
         if food in likes:
             for j in likes[food]:
-                if deleting_id in clients[j].collided_clients:
-                    clients[j].num_collisions -= 1
-                    clients[j].collided_clients.remove(deleting_id)
-    clients[deleting_id].num_collisions = 0
-    clients[deleting_id].collided_clients.clear()
+                clients[j].num_collisions -= 1
 
 def main():
     likes, dislikes, clients = input_data()
     order_clients = [(clients[i].num_collisions, get_factor_others_collisions(clients, i), i) for i in range(len(clients))]
     order_clients.sort()
-    # puntuacion = sum(1 for c in clients if c.num_collisions == 0)
-    kept_clients = []
+    puntuacion = sum(1 for c in clients if c.num_collisions == 0)
     ingredients = get_non_collision_ingredients(likes, dislikes)
-    puntuacion = len(kept_clients)
     best_solution = Solution(puntuacion, ingredients)
     while order_clients:
         if not order_clients:
             print("Impossible!")
             break
-        keeping_id = order_clients.pop(0)[2]
-        clients[keeping_id].happy = True
-        kept_clients.append(keeping_id)
+        indexes_id = [i for i,v in enumerate(order_clients) if clients[v[2]].num_collisions!=0]
+        if not indexes_id:
+            #print("Fin")
+            break
+        keeping_id = order_clients[indexes_id[0]][2]
         lik_foods = clients[keeping_id].client_likes
         for food in lik_foods:
             if food in dislikes:
                 for j in dislikes[food]:
-                    # keeping_id in clients[j].collided_clients and 
-                    if not clients[j].happy:
-                        delete_client(j, likes, dislikes, clients, order_clients)
+                    delete_client(j, likes, dislikes, clients, order_clients)
         dis_foods = clients[keeping_id].client_dislikes
         for food in dis_foods:
             if food in likes:
                 for j in likes[food]:
-                    # keeping_id in clients[j].collided_clients and 
-                    if not clients[j].happy:
-                        delete_client(j, likes, dislikes, clients, order_clients)
+                    delete_client(j, likes, dislikes, clients, order_clients)
         order_clients = [(clients[oc[2]].num_collisions, get_factor_others_collisions(clients, oc[2]), oc[2]) for oc in order_clients]
         order_clients.sort()
-        #puntuacion = sum(1 for c in clients if c.num_collisions == 0)
-        puntuacion = len(kept_clients)
+        puntuacion = sum(1 for c in clients if c.num_collisions == 0)
         if puntuacion > best_solution.puntuacion:
             ingredients = get_non_collision_ingredients(likes, dislikes)
             best_solution = Solution(puntuacion, ingredients)

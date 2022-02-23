@@ -3,7 +3,6 @@
 # Pizza Hash Code Answer using a greedy approach.
 # It saves the clients that collide with less clients.
 
-from operator import index
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
 

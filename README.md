@@ -19,3 +19,7 @@ pizza_greedy_3: 3740
 pizza_greedy_3b: 3790
 
 2, 5, 5, 1719, 2059
+
+pizza_greedy_4: 3745
+
+2, 5, 5, 1708, 2025
