@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Author: Javier Gatón Herguedas.
 # Pizza Hash Code Answer using a greedy approach.
+# It deletes the client that collided with most ingredients.
 
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
